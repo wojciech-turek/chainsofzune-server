@@ -12,7 +12,7 @@ const passwordRoutes = require("./routes/password");
 const chatRoutes = require("./routes/chat");
 
 // setup mongo connection
-const uri = process.env.MONGO_CONNECTION_URL;
+const uri = process.env.DB_URL;
 mongoose.connect(uri, { useNewUrlParser: true });
 mongoose.connection.on("error", (error) => {
   console.log(error);
