@@ -7,7 +7,6 @@ const mongoose = require("mongoose");
 const cookieParser = require("cookie-parser");
 const passport = require("passport");
 const routes = require("./routes/main");
-const asyncMiddleware = require("./middleware/asyncMiddleware");
 const secureRoutes = require("./routes/secure");
 const passwordRoutes = require("./routes/password");
 const chatRoutes = require("./routes/chat");
