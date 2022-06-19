@@ -10,7 +10,7 @@ const routes = require("./routes/main");
 const asyncMiddleware = require("./middleware/asyncMiddleware");
 const secureRoutes = require("./routes/secure");
 const passwordRoutes = require("./routes/password");
-const ChatModel = require("./models/chatModel");
+const chatRoutes = require("./routes/chat");
 
 // setup mongo connection
 const uri = process.env.MONGO_CONNECTION_URL;
@@ -81,22 +81,8 @@ app.get("/", function (req, res) {
 // main routes
 app.use("/", routes);
 app.use("/", passwordRoutes);
+app.use("/", chatRoutes);
 app.use("/", passport.authenticate("jwt", { session: false }), secureRoutes);
-
-app.post(
-  "/submit-chatline",
-  passport.authenticate("jwt", { session: false }),
-  asyncMiddleware(async (req, res, next) => {
-    const { message } = req.body;
-    const { email, name } = req.user;
-    await ChatModel.create({ email, message });
-    io.emit("new message", {
-      username: name,
-      message,
-    });
-    res.status(200).json({ status: "ok" });
-  })
-);
 
 // catch all other routes
 app.use((req, res, next) => {
