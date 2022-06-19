@@ -33,7 +33,7 @@ io.on("connection", function (socket) {
   players[socket.id] = {
     flipX: false,
     x: Math.floor(Math.random() * 400) + 60,
-    y: Math.floor(Math.random() * 500) + 60,
+    y: Math.floor(Math.random() * 500) + 50,
     playerId: socket.id,
   };
   // send the players object to the new player
