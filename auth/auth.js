@@ -2,6 +2,8 @@ const passport = require("passport");
 const localStrategy = require("passport-local").Strategy;
 const JWTstrategy = require("passport-jwt").Strategy;
 
+const Logger = require("../services/logger");
+
 const UserModel = require("../models/userModel");
 
 // handle user registration
@@ -30,7 +32,7 @@ passport.use(
   "login",
   new localStrategy(
     {
-      usernameField: "email",
+      usernameField: "username",
       passwordField: "password",
     },
     async (email, password, done) => {

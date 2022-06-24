@@ -18,8 +18,6 @@ const mailgunAuth = {
 
 const smtpTransport = nodemailer.createTransport(mg(mailgunAuth));
 
-// smtpTransport.use("compile", hbs(handlebarsOptions));
-
 const forgotPasswordTemplate = handlebars.compile(
   fs.readFileSync(path.resolve("./templates/forgot-password.hbs"), "utf8")
 );

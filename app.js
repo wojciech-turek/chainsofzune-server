@@ -4,27 +4,38 @@ require("dotenv").config();
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
+const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const passport = require("passport");
-const routes = require("./routes/main");
+const routes = require("./routes/auth");
 const secureRoutes = require("./routes/secure");
 const passwordRoutes = require("./routes/password");
 const chatRoutes = require("./routes/chat");
+const Logger = require("./services/logger");
 
 // setup mongo connection
 const uri = process.env.DB_URL;
 mongoose.connect(uri, { useNewUrlParser: true });
 mongoose.connection.on("error", (error) => {
-  console.log(error);
+  Logger.error(error);
   process.exit(1);
 });
 mongoose.connection.on("connected", function () {
-  console.log("connected to mongo");
+  Logger.info("Server has been connected to the db");
 });
 // create an instance of an express app
 const app = express();
 const server = require("http").Server(app);
 const io = require("socket.io")(server);
+
+// update express settings
+app.use(bodyParser.urlencoded({ extended: false })); // parse application/x-www-form-urlencoded
+app.use(bodyParser.json()); // parse application/json
+app.use(cookieParser());
+
+app.use(cors({ origin: true }));
+app.options("*", cors({ origin: true }));
+
 const players = {};
 io.on("connection", function (socket) {
   console.log("a user connected: ", socket.id);
@@ -55,10 +66,7 @@ io.on("connection", function (socket) {
     socket.broadcast.emit("playerMoved", players[socket.id]);
   });
 });
-// update express settings
-app.use(bodyParser.urlencoded({ extended: false })); // parse application/x-www-form-urlencoded
-app.use(bodyParser.json()); // parse application/json
-app.use(cookieParser());
+
 // require passport auth
 require("./auth/auth");
 
@@ -89,9 +97,9 @@ app.use((req, res, next) => {
 });
 // handle errors
 app.use((err, req, res, next) => {
-  console.log(err.message);
+  Logger.error(err.message);
   res.status(err.status || 500).json({ error: err.message });
 });
 server.listen(process.env.PORT || 3000, () => {
-  console.log(`Server started on port ${process.env.PORT || 3000}`);
+  Logger.info(`Server started on port ${process.env.PORT || 3000}`);
 });
