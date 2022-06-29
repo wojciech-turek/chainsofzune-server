@@ -1,9 +1,22 @@
-const passport = require("passport");
-const express = require("express");
-const jwt = require("jsonwebtoken");
+import passport from "passport";
+import { Router } from "express";
+import { sign } from "jsonwebtoken";
+import Logger from "../services/logger";
 
-const tokenList = {};
-const router = express.Router();
+type TokenData = {
+  token: string;
+  refreshToken: string;
+  email: string;
+  _id: string;
+  name: string;
+};
+
+interface TokensList {
+  [key: string]: TokenData;
+}
+
+const tokenList: TokensList = {};
+const router = Router();
 
 router.get("/status", (req, res, next) => {
   res.status(200).json({ status: "ok" });
@@ -32,10 +45,10 @@ router.post("/login", async (req, res, next) => {
           name: user.name,
         };
 
-        const token = jwt.sign({ user: body }, "top_secret", {
+        const token = sign({ user: body }, "top_secret", {
           expiresIn: 300,
         });
-        const refreshToken = jwt.sign({ user: body }, "top_secret_refresh", {
+        const refreshToken = sign({ user: body }, "top_secret_refresh", {
           expiresIn: 86400,
         });
 
@@ -69,7 +82,7 @@ router.post("/token", (req, res) => {
       _id: tokenList[refreshToken]._id,
       name: tokenList[refreshToken].name,
     };
-    const token = jwt.sign({ user: body }, "top_secret", { expiresIn: 300 });
+    const token = sign({ user: body }, "top_secret", { expiresIn: 300 });
 
     // update jwt
     res.cookie("jwt", token);
@@ -92,4 +105,4 @@ router.post("/logout", (req, res) => {
   res.status(200).json({ message: "logged out" });
 });
 
-module.exports = router;
+export default router;

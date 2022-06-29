@@ -1,13 +1,20 @@
 import UserModel from "../models/userModel";
-import toLowerCase from "../utils/utils";
+import { toLowerCase } from "../utils/utils";
 import sigUtil from "eth-sig-util";
 import ethUtil from "ethereumjs-util";
 
-const validateSignature = async (publicKey, signature, retrievedAddr) => {
+const validateSignature = async (
+  publicKey: string,
+  signature: string,
+  retrievedAddr: string
+) => {
   try {
     publicKey = toLowerCase(publicKey);
     retrievedAddr = toLowerCase(retrievedAddr);
     let account = await UserModel.findOne({ walletAddress: publicKey });
+    if (!account) {
+      return false;
+    }
     let nonce = account.nonce;
     let msg = `Approve signature with nonce ${nonce}`;
     let msgBufferHex = ethUtil.bufferToHex(Buffer.from(msg, "utf8"));

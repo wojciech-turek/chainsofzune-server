@@ -4,6 +4,7 @@
   "description": "",
   "main": "app.js",
   "dependencies": {
+    "@types/validator": "^13.7.3",
     "bcrypt": "^5.0.1",
     "body-parser": "^1.18.3",
     "cookie-parser": "^1.4.6",
@@ -12,6 +13,7 @@
     "eth-sig-util": "^3.0.1",
     "ethereumjs-util": "^7.1.5",
     "express": "^4.16.4",
+    "express-session": "^1.17.3",
     "jsonwebtoken": "^8.5.1",
     "mailgun-js": "^0.6.7",
     "mongoose": "^6.4.0",
@@ -21,14 +23,32 @@
     "passport": "^0.6.0",
     "passport-jwt": "^4.0.0",
     "passport-local": "^1.0.0",
+    "randomstring": "^1.2.2",
     "socket.io": "^4.5.1",
+    "validator": "^13.7.0",
     "winston": "^3.7.2"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node app.js"
+    "start": "ts-node app.ts"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.0",
+    "@types/cookie-parser": "^1.4.3",
+    "@types/dotenv": "^8.2.0",
+    "@types/express-session": "^1.17.4",
+    "@types/jsonwebtoken": "^8.5.8",
+    "@types/mongoose": "^5.11.97",
+    "@types/nodemailer": "^6.4.4",
+    "@types/nodemailer-express-handlebars": "^4.0.2",
+    "@types/nodemailer-mailgun-transport": "^1.4.3",
+    "@types/passport": "^1.0.9",
+    "@types/passport-jwt": "^3.0.6",
+    "@types/passport-local": "^1.0.34",
+    "@types/randomstring": "^1.1.8",
+    "typescript": "^4.7.4"
+  }
 }

@@ -1,21 +1,37 @@
 // reads in our .env file and makes those values available as environment variables
-require("dotenv").config();
+require("dotenv").config({ path: __dirname + "/.env" });
 
-const express = require("express");
-const bodyParser = require("body-parser");
-const mongoose = require("mongoose");
-const cors = require("cors");
-const cookieParser = require("cookie-parser");
-const passport = require("passport");
-const routes = require("./routes/auth");
-const secureRoutes = require("./routes/secure");
-const passwordRoutes = require("./routes/password");
-const chatRoutes = require("./routes/chat");
-const Logger = require("./services/logger");
+import express from "express";
+import bodyParser from "body-parser";
+import { createServer } from "http";
+import mongoose from "mongoose";
+import passport from "passport";
+import cors from "cors";
+import cookieParser from "cookie-parser";
+import "./auth/auth";
+import authRoutes from "./routes/auth";
+import passwordRoutes from "./routes/password";
+import chatRoutes from "./routes/chat";
+import secureRoutes from "./routes/secure";
+import { Server, Socket } from "socket.io";
+import Logger from "./services/logger";
+// import session from "express-session";
+
+interface Error {
+  status?: number;
+  message?: string;
+}
+
+type Player = {
+  flipX: boolean;
+  x: number;
+  y: number;
+  playerId: string;
+};
 
 // setup mongo connection
-const uri = process.env.DB_URL;
-mongoose.connect(uri, { useNewUrlParser: true });
+const uri = process.env.DB_URL!;
+mongoose.connect(uri);
 mongoose.connection.on("error", (error) => {
   Logger.error(error);
   process.exit(1);
@@ -25,8 +41,21 @@ mongoose.connection.on("connected", function () {
 });
 // create an instance of an express app
 const app = express();
-const server = require("http").Server(app);
-const io = require("socket.io")(server);
+const httpServer = createServer(app);
+export const io = new Server(httpServer, {
+  // ...
+});
+
+// app.use(
+//   session({
+//     secret: "keyboard cat",
+//     resave: false,
+//     saveUninitialized: true,
+//   })
+// );
+
+// app.use(passport.initialize());
+// app.use(passport.session());
 
 // update express settings
 app.use(bodyParser.urlencoded({ extended: false })); // parse application/x-www-form-urlencoded
@@ -34,10 +63,9 @@ app.use(bodyParser.json()); // parse application/json
 app.use(cookieParser());
 
 app.use(cors({ origin: true }));
-app.options("*", cors({ origin: true }));
 
-const players = {};
-io.on("connection", function (socket) {
+const players: { [key: string]: Player } = {};
+io.on("connection", function (socket: Socket) {
   console.log("a user connected: ", socket.id);
   // create a new player and add it to our players object
   players[socket.id] = {
@@ -67,26 +95,8 @@ io.on("connection", function (socket) {
   });
 });
 
-// require passport auth
-require("./auth/auth");
-
-app.get(
-  "/game.html",
-  passport.authenticate("jwt", { session: false }),
-  function (req, res) {
-    res.sendFile(__dirname + "/public/game.html");
-  }
-);
-
-app.get("/game.html", function (req, res) {
-  res.sendFile(__dirname + "/public/game.html");
-});
-app.use(express.static(__dirname + "/public"));
-app.get("/", function (req, res) {
-  res.sendFile(__dirname + "/index.html");
-});
 // main routes
-app.use("/", routes);
+app.use("/", authRoutes);
 app.use("/", passwordRoutes);
 app.use("/", chatRoutes);
 app.use("/", passport.authenticate("jwt", { session: false }), secureRoutes);
@@ -96,10 +106,17 @@ app.use((req, res, next) => {
   res.status(404).json({ message: "404 - Not Found" });
 });
 // handle errors
-app.use((err, req, res, next) => {
-  Logger.error(err.message);
-  res.status(err.status || 500).json({ error: err.message });
-});
-server.listen(process.env.PORT || 3000, () => {
+app.use(
+  (
+    err: Error,
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction
+  ) => {
+    Logger.error(err.message);
+    res.status(err.status || 500).json({ error: err.message });
+  }
+);
+httpServer.listen(process.env.PORT || 3000, () => {
   Logger.info(`Server started on port ${process.env.PORT || 3000}`);
 });
