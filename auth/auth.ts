@@ -11,6 +11,7 @@ import randomstring from "randomstring";
 
 import UserModel from "../models/userModel";
 import Logger from "../services/logger";
+import { sendVerifyEmail } from "../services/mailer";
 
 // handle user registration
 passport.use(
@@ -76,6 +77,7 @@ passport.use(
           nonce,
         });
         Logger.info("New user created");
+        await sendVerifyEmail(user);
         return done(null, user);
       } catch (error) {
         done(error);
@@ -97,6 +99,11 @@ passport.use(
         const user = await UserModel.findOne({ email });
         if (!user) {
           return done(null, false, { message: "User not found" });
+        }
+        if (user.verified === false) {
+          return done(null, false, {
+            message: "Please verify your account first",
+          });
         }
         const validate = await user.isValidPassword(password);
         if (!validate) {

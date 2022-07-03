@@ -1,7 +1,11 @@
+import express from "express";
 import passport from "passport";
 import { Router } from "express";
 import { sign } from "jsonwebtoken";
-import Logger from "../services/logger";
+
+import { asyncMiddleware } from "../middleware/asyncMiddleware";
+import UserModel from "../models/userModel";
+import { sendVerifyEmail } from "../services/mailer";
 
 type TokenData = {
   token: string;
@@ -73,6 +77,61 @@ router.post("/login", async (req, res, next) => {
     }
   })(req, res, next);
 });
+
+router.post(
+  "very-account",
+  asyncMiddleware(
+    async (
+      req: express.Request,
+      res: express.Response,
+      next: express.NextFunction
+    ) => {
+      const { verifyToken } = req.body;
+      const User = await UserModel.findOne({ verify_token: verifyToken });
+      if (!User) {
+        res.status(400).json({ message: "Incorrect verification code" });
+        return;
+      }
+      try {
+        User.verified = true;
+        await User.save();
+        res.status(200).json({
+          message: "Your account is now verified, you can proceed to login.",
+        });
+      } catch (err) {
+        console.log("cannot send email");
+      }
+    }
+  )
+);
+
+router.post(
+  "/send-verify-link",
+  asyncMiddleware(
+    async (
+      req: express.Request,
+      res: express.Response,
+      next: express.NextFunction
+    ) => {
+      const { email } = req.body;
+      const User = await UserModel.findOne({ email });
+      if (!User) {
+        res.status(400).json({ message: "invalid email" });
+        return;
+      }
+
+      try {
+        await sendVerifyEmail(User);
+        res.status(200).json({
+          message:
+            "An email has been sent to your email. Please click the link in the message to verify your account.",
+        });
+      } catch (err) {
+        console.log("cannot send email");
+      }
+    }
+  )
+);
 
 router.post("/token", (req, res) => {
   const { refreshToken } = req.body;
