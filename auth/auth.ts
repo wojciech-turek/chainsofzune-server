@@ -48,6 +48,10 @@ passport.use(
         return done({ message: "Your passwords do not match" });
       }
 
+      if (typeof password !== "string" || password.length < 8) {
+        return done({ message: "Password must be at least 8 characters" });
+      }
+
       const msg = `Creating new account account! Request: ${0}`;
       const msgBufferHex = bufferToHex(Buffer.from(msg, "utf8"));
       const address = recoverPersonalSignature({
@@ -80,6 +84,7 @@ passport.use(
         await sendVerifyEmail(user);
         return done(null, user);
       } catch (error) {
+        console.log(error);
         done(error);
       }
     }

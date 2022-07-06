@@ -1,1 +1,1 @@
-export const projectName = "Chains of Zune";
+export const projectName = "Chains of Chaos";

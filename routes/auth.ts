@@ -28,7 +28,7 @@ router.get("/status", (req, res, next) => {
 
 router.post(
   "/signup",
-  passport.authenticate("signup", { session: false }),
+  passport.authenticate("signup", { session: false, failWithError: true }),
   async (req, res, next) => {
     res.status(200).json({ message: "signup successful" });
   }
@@ -50,10 +50,10 @@ router.post("/login", async (req, res, next) => {
         };
 
         const token = sign({ user: body }, "top_secret", {
-          expiresIn: 300,
+          expiresIn: "1h",
         });
         const refreshToken = sign({ user: body }, "top_secret_refresh", {
-          expiresIn: 86400,
+          expiresIn: "24h",
         });
 
         // store tokens in cookie

@@ -1,7 +1,7 @@
 import handlebars from "handlebars";
 import path from "path";
 import fs from "fs";
-import mg, { AuthOptions } from "nodemailer-mailgun-transport";
+import mg from "nodemailer-mailgun-transport";
 import nodemailer from "nodemailer";
 import { IUser } from "../models/userModel";
 import { projectName } from "../constants";
@@ -19,12 +19,14 @@ const resetPasswordTemplate = handlebars.compile(
 );
 
 const mailgunAuth = {
-  api_key: process.env.MAILGUN_API || "",
-  domain: process.env.MAILGUN_DOMAIN,
+  auth: {
+    api_key: process.env.MAILGUN_API || "",
+    domain: process.env.MAILGUN_DOMAIN,
+  },
   host: "api.eu.mailgun.net",
 };
 
-const smtpTransport = nodemailer.createTransport(mg({ auth: mailgunAuth }));
+const smtpTransport = nodemailer.createTransport(mg(mailgunAuth));
 
 const sendVerifyEmail = async (User: IUser) => {
   const htmlToSend = activationEmailTemplate({
