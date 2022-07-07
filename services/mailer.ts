@@ -4,7 +4,7 @@ import fs from "fs";
 import mg from "nodemailer-mailgun-transport";
 import nodemailer from "nodemailer";
 import { IUser } from "../models/userModel";
-import { projectName } from "../constants";
+import { devURL, prodURL, projectName } from "../constants";
 import Logger from "../services/logger";
 
 const activationEmailTemplate = handlebars.compile(
@@ -30,8 +30,10 @@ const smtpTransport = nodemailer.createTransport(mg(mailgunAuth));
 
 const sendVerifyEmail = async (User: IUser) => {
   const htmlToSend = activationEmailTemplate({
-    url: `http://localhost:${process.env.PORT || 3000}/verify-email?code=${
-      User.verify_token
+    url: `${
+      process.env.NODE_ENV === "development"
+        ? `${devURL}/verify-email?code=${User.verify_token}`
+        : `${prodURL}/verify-email?code=${User.verify_token}`
     }`,
     name: User.name,
   });

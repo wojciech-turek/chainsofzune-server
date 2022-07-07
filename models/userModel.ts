@@ -12,6 +12,7 @@ export interface IUser {
   resetTokenExp: Date | undefined;
   verified: boolean;
   verify_token: string;
+  verify_token_sent_at: number;
 }
 
 interface IUserDocument extends IUser, Document {
@@ -65,6 +66,9 @@ const UserSchema: Schema<IUserDocument> = new mongoose.Schema({
   verify_token: {
     type: String,
     required: true,
+  },
+  verify_token_sent_at: {
+    type: Number,
   },
 });
 

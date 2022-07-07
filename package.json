@@ -16,6 +16,7 @@
     "express-session": "^1.17.3",
     "jsonwebtoken": "^8.5.1",
     "mailgun-js": "^0.6.7",
+    "moment": "^2.29.4",
     "mongoose": "^6.4.0",
     "nodemailer": "^6.7.5",
     "nodemailer-express-handlebars": "^5.0.0",

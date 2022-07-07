@@ -2,6 +2,7 @@ import express from "express";
 import passport from "passport";
 import { Router } from "express";
 import { sign } from "jsonwebtoken";
+import moment from "moment";
 
 import { asyncMiddleware } from "../middleware/asyncMiddleware";
 import UserModel from "../models/userModel";
@@ -79,7 +80,7 @@ router.post("/login", async (req, res, next) => {
 });
 
 router.post(
-  "very-account",
+  "verify-account",
   asyncMiddleware(
     async (
       req: express.Request,
@@ -114,18 +115,31 @@ router.post(
       next: express.NextFunction
     ) => {
       const { email } = req.body;
+
       const User = await UserModel.findOne({ email });
       if (!User) {
         res.status(400).json({ message: "invalid email" });
         return;
       }
-
+      if (User.verified) {
+        res.status(400).json({ message: "Already verified" });
+        return;
+      }
+      if (User.verify_token_sent_at + 60 > moment().unix()) {
+        res.status(400).json({
+          message: "Can only request activation link every 60 seconds",
+          canRequest: User.verify_token_sent_at + 60,
+        });
+        return;
+      }
       try {
         await sendVerifyEmail(User);
         res.status(200).json({
           message:
-            "An email has been sent to your email. Please click the link in the message to verify your account.",
+            "An email has been sent to your mailbox, please click the link in the message to verify your account.",
         });
+        User.verify_token_sent_at = moment().unix();
+        User.save();
       } catch (err) {
         console.log("cannot send email");
       }
