@@ -20,9 +20,10 @@ interface IUserDocument extends IUser, Document {
 }
 
 interface IUserModel extends Model<IUserDocument> {
-  findByUsernameOrEmail: (
+  findByUsernameEmailOrWallet: (
     username: string,
-    email: string
+    email: string,
+    wallet: string
   ) => Promise<IUserDocument>;
 }
 
@@ -85,12 +86,17 @@ UserSchema.methods.isValidPassword = async function (password: string) {
   return compare;
 };
 
-UserSchema.statics.findByUsernameOrEmail = function (
+UserSchema.statics.findByUsernameEmailOrWallet = function (
   username: string,
-  email: string
+  email: string,
+  wallet: string
 ) {
   return this.findOne({
-    $or: [{ name_lowercase: username }, { email: email }],
+    $or: [
+      { name_lowercase: username },
+      { email: email },
+      { walletAddress: wallet },
+    ],
   });
 };
 

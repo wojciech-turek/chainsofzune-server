@@ -32,9 +32,10 @@ passport.use(
         return done({ message: "Email incorrect" });
       }
       const { name, walletAddress, signature, confirmPassword } = req.body;
-      const User = await UserModel.findByUsernameOrEmail(
+      const User = await UserModel.findByUsernameEmailOrWallet(
         toLowerCase(name),
-        email
+        email,
+        walletAddress
       );
       if (User && User.email === email) {
         return done({ message: "Email already exists" });
@@ -50,6 +51,10 @@ passport.use(
 
       if (typeof password !== "string" || password.length < 8) {
         return done({ message: "Password must be at least 8 characters" });
+      }
+
+      if (User && User.walletAddress === walletAddress) {
+        return done({ message: "Wallet address already used" });
       }
 
       const msg = `Creating new account account! Request: ${0}`;
