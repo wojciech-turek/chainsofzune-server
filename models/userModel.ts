@@ -7,7 +7,6 @@ export interface IUser {
   walletAddress: string;
   nonce: number;
   name: string;
-  name_lowercase: string;
   resetToken: string | undefined;
   resetTokenExp: Date | undefined;
   verified: boolean;
@@ -50,10 +49,6 @@ const UserSchema: Schema<IUserDocument> = new mongoose.Schema({
     type: String,
     required: true,
   },
-  name_lowercase: {
-    type: String,
-    required: true,
-  },
   resetToken: {
     type: String,
   },
@@ -73,13 +68,6 @@ const UserSchema: Schema<IUserDocument> = new mongoose.Schema({
   },
 });
 
-UserSchema.pre("save", async function (next: any) {
-  // const user = this;
-  const hash = await bcrypt.hash(this.password, 10);
-  this.password = hash;
-  next();
-});
-
 UserSchema.methods.isValidPassword = async function (password: string) {
   const user = this;
   const compare = await bcrypt.compare(password, user.password);
@@ -92,11 +80,7 @@ UserSchema.statics.findByUsernameEmailOrWallet = function (
   wallet: string
 ) {
   return this.findOne({
-    $or: [
-      { name_lowercase: username },
-      { email: email },
-      { walletAddress: wallet },
-    ],
+    $or: [{ name: username }, { email: email }, { walletAddress: wallet }],
   });
 };
 

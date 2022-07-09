@@ -31,9 +31,9 @@ const smtpTransport = nodemailer.createTransport(mg(mailgunAuth));
 const sendVerifyEmail = async (User: IUser) => {
   const htmlToSend = activationEmailTemplate({
     url: `${
-      process.env.NODE_ENV === "development"
-        ? `${devURL}/verify-email?code=${User.verify_token}`
-        : `${prodURL}/verify-email?code=${User.verify_token}`
+      process.env.NODE_ENV === "production"
+        ? `${prodURL}/activate/${User.verify_token}`
+        : `${devURL}/activate/${User.verify_token}`
     }`,
     name: User.name,
   });
@@ -64,11 +64,14 @@ const sendPasswordResetConfirmation = async (User: IUser) => {
 
 const sendForgotPassword = async (User: IUser, token: string) => {
   const htmlToSend = forgotPasswordTemplate({
-    url: `http://localhost:${
-      process.env.PORT || 3000
-    }/reset-password?token=${token}`,
+    url: `${
+      process.env.NODE_ENV === "production"
+        ? `${prodURL}/set-password?token=${token}`
+        : `${devURL}/set-password?token=${token}`
+    }`,
     name: User.name,
   });
+
   const data = {
     to: User.email,
     from: process.env.EMAIL,

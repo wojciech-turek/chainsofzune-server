@@ -39,7 +39,7 @@ router.post("/login", async (req, res, next) => {
   passport.authenticate("login", async (err, user, info) => {
     try {
       if (err || !user) {
-        const error = new Error("User not found or wrong password entered");
+        const error = new Error(err.message);
         return next(error);
       }
       req.login(user, { session: false }, async (error) => {
@@ -56,10 +56,6 @@ router.post("/login", async (req, res, next) => {
         const refreshToken = sign({ user: body }, "top_secret_refresh", {
           expiresIn: "24h",
         });
-
-        // store tokens in cookie
-        res.cookie("jwt", token);
-        res.cookie("refreshJwt", refreshToken);
 
         // store tokens in memory
         tokenList[refreshToken] = {
@@ -80,7 +76,7 @@ router.post("/login", async (req, res, next) => {
 });
 
 router.post(
-  "verify-account",
+  "/activate-account",
   asyncMiddleware(
     async (
       req: express.Request,
@@ -91,6 +87,10 @@ router.post(
       const User = await UserModel.findOne({ verify_token: verifyToken });
       if (!User) {
         res.status(400).json({ message: "Incorrect verification code" });
+        return;
+      }
+      if (User && User.verified) {
+        res.status(400).json({ message: "User already verified" });
         return;
       }
       try {

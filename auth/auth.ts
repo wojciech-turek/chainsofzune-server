@@ -1,3 +1,4 @@
+import bcrypt from "bcrypt";
 import { toLowerCase } from "./../utils/utils";
 import express from "express";
 import isEmail from "validator/lib/isEmail";
@@ -41,7 +42,7 @@ passport.use(
         return done({ message: "Email already exists" });
       }
 
-      if (User && User.name_lowercase === toLowerCase(name)) {
+      if (User && User.name.toLowerCase() === toLowerCase(name)) {
         return done({ message: "Name already exists" });
       }
 
@@ -74,6 +75,9 @@ passport.use(
         length: 64,
       });
 
+      const hash = await bcrypt.hash(password, 10);
+      password = hash;
+
       try {
         const user = await UserModel.create({
           email,
@@ -81,7 +85,6 @@ passport.use(
           verify_token: verificationToken,
           password,
           name,
-          name_lowercase: toLowerCase(name),
           walletAddress: toLowerCase(walletAddress),
           nonce,
         });
@@ -96,7 +99,6 @@ passport.use(
   )
 );
 
-// handle user login
 passport.use(
   "login",
   new LocalStrategy(
@@ -108,16 +110,16 @@ passport.use(
       try {
         const user = await UserModel.findOne({ email });
         if (!user) {
-          return done(null, false, { message: "User not found" });
+          return done({ message: "User not found" });
         }
         if (user.verified === false) {
-          return done(null, false, {
+          return done({
             message: "Please verify your account first",
           });
         }
         const validate = await user.isValidPassword(password);
         if (!validate) {
-          return done(null, false, { message: "Wrong username or password" });
+          return done({ message: "Wrong username or password" });
         }
         Logger.info(`User ${email} logged in.`);
         return done(null, user, { message: "Logged in Successfully" });

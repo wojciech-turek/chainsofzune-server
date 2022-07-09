@@ -20,7 +20,7 @@ router.post(
       const { email } = req.body;
       const User = await UserModel.findOne({ email });
       if (!User) {
-        res.status(400).json({ message: "invalid email" });
+        res.status(400).json({ message: "Invalid email" });
         return;
       }
 
