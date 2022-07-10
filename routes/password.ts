@@ -1,3 +1,4 @@
+import bcrypt from "bcrypt";
 import express from "express";
 import crypto from "crypto";
 import { asyncMiddleware } from "../middleware/asyncMiddleware";
@@ -68,7 +69,8 @@ router.post(
         return;
       }
       // update user model
-      User.password = req.body.password;
+      const hash = await bcrypt.hash(req.body.password, 10);
+      User.password = hash;
       User.resetToken = undefined;
       User.resetTokenExp = undefined;
       await User.save();
