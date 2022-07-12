@@ -7,7 +7,6 @@ import { createServer } from "http";
 import mongoose from "mongoose";
 import passport from "passport";
 import cors from "cors";
-import cookieParser from "cookie-parser";
 import "./auth/auth";
 import authRoutes from "./routes/auth";
 import passwordRoutes from "./routes/password";
@@ -15,7 +14,7 @@ import chatRoutes from "./routes/chat";
 import secureRoutes from "./routes/secure";
 import { Server, Socket } from "socket.io";
 import Logger from "./services/logger";
-// import session from "express-session";
+import session from "express-session";
 
 interface Error {
   status?: number;
@@ -42,31 +41,77 @@ mongoose.connection.on("connected", function () {
 // create an instance of an express app
 const app = express();
 const httpServer = createServer(app);
-export const io = new Server(httpServer, {
-  // ...
+
+const sessionMiddleware = session({
+  secret: process.env.JWT_SECRET!,
+  resave: false,
+  saveUninitialized: false,
 });
+app.use(sessionMiddleware);
+app.use(passport.initialize());
+app.use(passport.session());
 
-// app.use(
-//   session({
-//     secret: "keyboard cat",
-//     resave: false,
-//     saveUninitialized: true,
-//   })
-// );
-
-// app.use(passport.initialize());
-// app.use(passport.session());
-
-// update express settings
 app.use(bodyParser.urlencoded({ extended: false })); // parse application/x-www-form-urlencoded
 app.use(bodyParser.json()); // parse application/json
-app.use(cookieParser());
 
 app.use(cors({ origin: true }));
-
 const players: { [key: string]: Player } = {};
+
+export const io = new Server(httpServer, {
+  cors: {
+    origin: "http://localhost:3000",
+  },
+});
+
+const wrap = (middleware: any) => (socket: any, next: any) => {
+  return middleware(socket.request, {}, next);
+};
+
+const requireAuth = passport.authenticate(
+  "jwt",
+  { session: false },
+  (err, user, details) => {
+    if (err || !user) {
+      console.log("Socket connection error: ", details.message);
+      throw new Error(details.message);
+    }
+  }
+);
+
+io.use(wrap(sessionMiddleware));
+io.use(wrap(passport.initialize()));
+io.use(wrap(passport.session()));
+io.use((socket, next) => {
+  const req = socket.request;
+  try {
+    requireAuth(req, {}, next);
+  } catch (err) {
+    next(new Error("Unauthenticated"));
+  }
+});
+io.use((socket, next) => {
+  // TODO update type
+  //@ts-ignore
+  if (socket.request.user) {
+    next();
+  } else {
+    next(new Error("Unauthorized User"));
+  }
+});
+
+// io.filterSocketsByUser = (filterFn) =>
+//   Object.values(io.sockets.connected).filter(
+//     (socket) => socket.handshake && filterFn(socket.conn.request.user)
+//   );
+
+// io.emitToUser = (_id, event, ...args) =>
+//   io
+//     .filterSocketsByUser((user) => user._id.equals(_id))
+//     .forEach((socket) => socket.emit(event, ...args));
+
 io.on("connection", function (socket: Socket) {
-  console.log("a user connected: ", socket.id);
+  //@ts-ignore
+  console.log("A user connected: ", socket.request.user.name);
   // create a new player and add it to our players object
   players[socket.id] = {
     flipX: false,

@@ -50,12 +50,16 @@ router.post("/login", async (req, res, next) => {
           name: user.name,
         };
 
-        const token = sign({ user: body }, "top_secret", {
+        const token = sign({ user: body }, process.env.JWT_SECRET!, {
           expiresIn: "1h",
         });
-        const refreshToken = sign({ user: body }, "top_secret_refresh", {
-          expiresIn: "24h",
-        });
+        const refreshToken = sign(
+          { user: body },
+          process.env.JWT_REFRESH_SECRET!,
+          {
+            expiresIn: "24h",
+          }
+        );
 
         // store tokens in memory
         tokenList[refreshToken] = {
@@ -67,7 +71,7 @@ router.post("/login", async (req, res, next) => {
         };
 
         //Send back the token to the user
-        return res.status(200).json({ token, refreshToken });
+        return res.status(200).json({ token, refreshToken, user: user });
       });
     } catch (error) {
       return next(error);
@@ -155,10 +159,10 @@ router.post("/token", (req, res) => {
       _id: tokenList[refreshToken]._id,
       name: tokenList[refreshToken].name,
     };
-    const token = sign({ user: body }, "top_secret", { expiresIn: 300 });
+    const token = sign({ user: body }, process.env.JWT_SECRET!, {
+      expiresIn: "1h",
+    });
 
-    // update jwt
-    res.cookie("jwt", token);
     tokenList[refreshToken].token = token;
 
     res.status(200).json({ token });
@@ -168,13 +172,8 @@ router.post("/token", (req, res) => {
 });
 
 router.post("/logout", (req, res) => {
-  if (req.cookies) {
-    const refreshToken = req.cookies["refreshJwt"];
-    if (refreshToken in tokenList) delete tokenList[refreshToken];
-    res.clearCookie("refreshJwt");
-    res.clearCookie("jwt");
-  }
-
+  const { refreshToken } = req.body;
+  if (refreshToken in tokenList) delete tokenList[refreshToken];
   res.status(200).json({ message: "logged out" });
 });
 

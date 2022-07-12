@@ -5,7 +5,7 @@ import isEmail from "validator/lib/isEmail";
 
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
-import { Strategy as JWTstrategy } from "passport-jwt";
+import { Strategy as JWTstrategy, ExtractJwt } from "passport-jwt";
 import { recoverPersonalSignature } from "eth-sig-util";
 import { bufferToHex } from "ethereumjs-util";
 import randomstring from "randomstring";
@@ -40,6 +40,10 @@ passport.use(
       );
       if (User && User.email === email) {
         return done({ message: "Email already exists" });
+      }
+
+      if (name.length < 3) {
+        return done({ message: "Name too short" });
       }
 
       if (User && User.name.toLowerCase() === toLowerCase(name)) {
@@ -134,18 +138,22 @@ passport.use(
 passport.use(
   new JWTstrategy(
     {
-      secretOrKey: "top_secret",
-      jwtFromRequest: function (req: any) {
-        let token = null;
-        if (req && req.cookies) token = req.cookies["jwt"];
-        return token;
+      secretOrKey: process.env.JWT_SECRET,
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jsonWebTokenOptions: {
+        ignoreExpiration: false,
       },
     },
-    async (token: any, done: any) => {
+    async (jwt_payload: any, done: any) => {
       try {
-        return done(null, token.user);
-      } catch (error) {
-        done(error);
+        UserModel.findOne({ id: jwt_payload.sub }, (err: any, user: any) => {
+          if (err) {
+            return done(err, false);
+          }
+          return !user ? done(null, false) : done(null, user);
+        });
+      } catch (err) {
+        done(err, false);
       }
     }
   )
